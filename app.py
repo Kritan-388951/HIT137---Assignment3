@@ -2,7 +2,8 @@ import tkinter as tk
 from tkinter import filedialog, Text
 from PIL import Image, ImageTk
 from transformers import pipeline
-
+from diffusers import StableDiffusionPipeline
+import torch
 
 class AIApp:
     def __init__(self, root):
@@ -45,6 +46,16 @@ class AIApp:
 
         self.file_path = None
 
+        # --------- Load Hugging Face models once ---------
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.sd_pipe = StableDiffusionPipeline.from_pretrained(
+            "runwayml/stable-diffusion-v1-5", torch_dtype=torch.float16 if device=="cuda" else torch.float32
+        ).to(device)
+        self.image_classifier = pipeline(
+            "image-classification", model="google/vit-base-patch16-224", device=0 if device=="cuda" else -1
+        )
+        self.audio_pipe = pipeline("automatic-speech-recognition", model="openai/whisper-small")
+
     def load_file(self):
         self.file_path = filedialog.askopenfilename()
         self.output_label.config(text=f"Selected file: {self.file_path}")
@@ -55,8 +66,9 @@ class AIApp:
         if task == "Text-to-Image":
             text = self.input_box.get("1.0", tk.END).strip()
             if text:
-                pipe = pipeline("text-to-image", model="runwayml/stable-diffusion-v1-5")
-                result = pipe(text, num_inference_steps=20)[0]["image"]
+                self.output_label.config(text="Generating image, please wait...")
+                self.root.update()
+                result = self.sd_pipe(text, num_inference_steps=20).images[0]
                 result.thumbnail((400, 400))
                 img_tk = ImageTk.PhotoImage(result)
                 self.image_label.config(image=img_tk)
@@ -67,19 +79,19 @@ class AIApp:
 
         elif task == "Image-Classification":
             if self.file_path:
-                pipe = pipeline("image-classification", model="google/vit-base-patch16-224")
-                preds = pipe(self.file_path)
-                top_pred = preds[0]
-                self.output_label.config(
-                    text=f"Prediction: {top_pred['label']} (score: {top_pred['score']:.2f})"
-                )
+                self.output_label.config(text="Classifying image...")
+                self.root.update()
+                preds = self.image_classifier(self.file_path)
+                formatted = "\n".join([f"{r['label']}: {r['score']:.3f}" for r in preds])
+                self.output_label.config(text=formatted)
             else:
                 self.output_label.config(text="Please choose an image file first.")
 
         elif task == "Audio-Transcription":
             if self.file_path:
-                pipe = pipeline("automatic-speech-recognition", model="openai/whisper-small")
-                result = pipe(self.file_path)
+                self.output_label.config(text="Transcribing audio...")
+                self.root.update()
+                result = self.audio_pipe(self.file_path)
                 self.output_label.config(text=f"Transcription: {result['text']}")
             else:
                 self.output_label.config(text="Please choose an audio file first.")
