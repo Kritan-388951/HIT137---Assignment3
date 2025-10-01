@@ -1,4 +1,8 @@
-tk
-transformers
 torch
-huggingface_hub
+transformers
+diffusers
+accelerate
+bitsandbytes
+sentencepiece
+Pillow
+tk
