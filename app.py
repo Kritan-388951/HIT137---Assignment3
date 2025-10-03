@@ -9,7 +9,7 @@ class AIApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Multi-Model Hugging Face App")
-        self.root.geometry("900x700")
+        self.root.geometry("900x800")  # slightly taller for model info box
 
         # Dropdown for task selection
         self.option_var = tk.StringVar(value="Text-to-Image")
@@ -40,9 +40,15 @@ class AIApp:
 
         # Explanations section
         tk.Label(root, text="Explanations (OOP Concepts):", font=("Arial", 12, "bold")).pack()
-        self.explain_box = Text(root, height=12, width=80)
+        self.explain_box = Text(root, height=10, width=80)
         self.explain_box.pack()
         self.show_explanations()
+
+        # AI Model Information section
+        tk.Label(root, text="AI Model Information:", font=("Arial", 12, "bold")).pack(pady=5)
+        self.model_info_box = Text(root, height=8, width=80)
+        self.model_info_box.pack()
+        self.show_all_model_info()  # <-- fill box at startup
 
         self.file_path = None
 
@@ -74,6 +80,7 @@ class AIApp:
                 self.image_label.config(image=img_tk)
                 self.image_label.image = img_tk
                 self.output_label.config(text="Generated Image from text!")
+                self.show_model_info("runwayml/stable-diffusion-v1-5")
             else:
                 self.output_label.config(text="Please enter some text for text-to-image.")
 
@@ -84,6 +91,7 @@ class AIApp:
                 preds = self.image_classifier(self.file_path)
                 formatted = "\n".join([f"{r['label']}: {r['score']:.3f}" for r in preds])
                 self.output_label.config(text=formatted)
+                self.show_model_info("google/vit-base-patch16-224")
             else:
                 self.output_label.config(text="Please choose an image file first.")
 
@@ -93,6 +101,7 @@ class AIApp:
                 self.root.update()
                 result = self.audio_pipe(self.file_path)
                 self.output_label.config(text=f"Transcription: {result['text']}")
+                self.show_model_info("openai/whisper-small")
             else:
                 self.output_label.config(text="Please choose an audio file first.")
 
@@ -112,8 +121,38 @@ We used Object-Oriented Programming (OOP) concepts in this code:
 """
         self.explain_box.insert("1.0", explanation_text)
 
+    def show_model_info(self, model_name):
+        info = {
+            "runwayml/stable-diffusion-v1-5": "Stable Diffusion v1.5 is a powerful text-to-image model that generates images from natural language prompts.",
+            "google/vit-base-patch16-224": "Vision Transformer (ViT) is a deep learning model that classifies images using transformer architecture.",
+            "openai/whisper-small": "Whisper is an automatic speech recognition (ASR) model trained on diverse multilingual data for transcription."
+        }
+        self.model_info_box.delete("1.0", tk.END)
+        self.model_info_box.insert("1.0", info.get(model_name, "Model information not available."))
+
+    def show_all_model_info(self):
+        text = """Available AI Models:
+
+1. runwayml/stable-diffusion-v1-5:
+   Stable Diffusion v1.5 is a text-to-image model that generates images from prompts.
+
+2. google/vit-base-patch16-224:
+   Vision Transformer (ViT) is an image classification model using transformer architecture.
+
+3. openai/whisper-small:
+   Whisper is a speech recognition model trained on multilingual data for transcription.
+"""
+        self.model_info_box.insert("1.0", text)
+
 
 if __name__ == "__main__":
     root = tk.Tk()
     app = AIApp(root)
     root.mainloop()
+
+
+
+
+
+
+
