@@ -1,11 +1,10 @@
-steps to run the code
+SUccesfully created the model.
+Team members:
 
+Kritan Adhikari
+Sandesh Khanal
+Himal Lamichhane
 
-python -m venv venv
-source venv/bin/activate   # on Mac/Linux
-venv\Scripts\activate      # on Windows
-pip install -r requirements.txt
-python app.py
 
 
 
